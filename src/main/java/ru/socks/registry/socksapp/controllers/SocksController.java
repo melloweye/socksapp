@@ -12,8 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.socks.registry.socksapp.exceptions.FileProcessingException;
+import ru.socks.registry.socksapp.exceptions.InvalidDataFormatException;
 import ru.socks.registry.socksapp.models.Socks;
-import ru.socks.registry.socksapp.repositories.SocksRepository;
 import ru.socks.registry.socksapp.services.SocksService;
 import ru.socks.registry.socksapp.utils.QuantityFilterType;
 
@@ -53,8 +54,11 @@ public class SocksController {
                     socks.setQuantity(Integer.parseInt(record.get("quantity")));
                     socks.setCottonPart(Integer.parseInt(record.get("cottonPart")));
                     socksList.add(socks);
-                } catch (NumberFormatException e) {
-                    log.error("Error parsing CSV file {}", record, e);
+                } catch (InvalidDataFormatException e) {
+                    log.error("Invalid data in record {}", record, e);
+                } catch (Exception e) {
+                    log.error("Unexpected error in parsing record {}", record, e);
+                    throw new FileProcessingException("Error processing record");
                 }
             }
 
@@ -64,7 +68,11 @@ public class SocksController {
         } catch (IOException e) {
             log.error("Error parsing CSV file {}", file.getOriginalFilename(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Error processing file" + file.getOriginalFilename());
+                    .body("Error processing file " + file.getOriginalFilename());
+        } catch (FileProcessingException e) {
+            log.error("Error processing file {}", file.getOriginalFilename(), e);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body("Error processing file " + file.getOriginalFilename());
         }
     }
 

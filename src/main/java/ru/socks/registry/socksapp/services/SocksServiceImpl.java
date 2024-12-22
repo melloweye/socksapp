@@ -79,10 +79,10 @@ public class SocksServiceImpl implements SocksService {
 
     @Override
     public void deleteSocksById(long id) {
-        socksRepository.findById(id).orElseThrow(() -> new SocksNotFoundException("Socks with id = " + id + " not found"));
+        Socks socks = socksRepository.findById(id)
+                .orElseThrow(() -> new SocksNotFoundException("Socks with id = " + id + " not found"));
 
-        if (socksRepository.existsById(id)) {
-            socksRepository.deleteById(id);
-        }
+        socksRepository.deleteById(socks.getId());
+
     }
 }
